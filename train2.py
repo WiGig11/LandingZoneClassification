@@ -19,7 +19,6 @@ from termcolor import colored
 import tqdm
 import pdb
 import os
-import yaml
 import matplotlib as plt
 import numpy as np
 
@@ -31,7 +30,8 @@ class Model(nn.Module):
         self.conv2 = nn.Conv2d(6, 16, 5)
         self.fc1 = nn.Linear(256, 120)
         self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 4)
+        self.fc3 = nn.Linear(84, 25)
+        self.fc4 = nn.Linear(25, 4)
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
@@ -41,6 +41,7 @@ class Model(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
+        x = self.fc4(x)
         return x
     
 class CustomMNIST(Dataset):
@@ -144,8 +145,8 @@ def train(device):
         # 你可能还需要其他转换，例如 Resize, Normalize 等
     ])
     #transforms.Lambda(lambda x: x.point(lambda p: 255 if p > 0 else 0)),
-    emnist_train = ImageFolder(root="./data2", transform=transform_custom)
-    emnist_test = ImageFolder(root="./testdata2", transform=transform_custom)
+    emnist_train = ImageFolder(root="./data_x", transform=transform_custom)
+    emnist_test = ImageFolder(root="./testdata", transform=transform_custom)
 
     train_dataset = torch.utils.data.ConcatDataset([custom_mnist_dataset_train, emnist_train])
     train_loader = torch.utils.data.DataLoader(dataset = train_dataset, batch_size=12, shuffle=True,collate_fn=custom_collate)
@@ -153,7 +154,7 @@ def train(device):
     test_dataset = torch.utils.data.ConcatDataset([custom_mnist_dataset_test, emnist_test])
     test_loader = torch.utils.data.DataLoader(dataset = test_dataset, batch_size=12, shuffle=False,collate_fn=custom_collate)
 
-    emnist_test_match = ImageFolder(root="./123X", transform=transform_custom)
+    emnist_test_match = ImageFolder(root="./123X/123X", transform=transform_custom)
     test_loader_match = torch.utils.data.DataLoader(dataset = emnist_test_match, batch_size=16, shuffle=True,collate_fn=custom_collate)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
