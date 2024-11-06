@@ -16,7 +16,7 @@ def preprocess_image_opencv(image_path):
     return image
 
 # 模型加载
-onnx_model_path = "model.onnx"
+onnx_model_path = "letterer.onnx"
 net_session = onnxruntime.InferenceSession(onnx_model_path)
 inputs = {net_session.get_inputs()[0].name: preprocess_image_opencv('test.png')}
 outs = net_session.run(None, inputs)[0]

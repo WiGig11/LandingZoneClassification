@@ -7,7 +7,7 @@ from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader, ConcatDataset
 from torchvision.datasets import ImageFolder
 from torch.utils.data.dataloader import default_collate
-
+import pdb
 # 自定义MNIST数据集
 class CustomMNIST(Dataset):
     def __init__(self, data, targets, transform=None):
@@ -27,11 +27,11 @@ class CustomMNIST(Dataset):
         return img, target
 
 # 自定义collate函数
-def custom_collate(batch):
+def custom_collate_stage1(batch):
     new_batch = []
     for items in batch:
         image, label = items
-        label_tensor = torch.tensor(int(label), dtype=torch.long)
+        label_tensor = torch.tensor(int(0), dtype=torch.long)
         new_batch.append((image, label_tensor))
     return default_collate(new_batch)
 
@@ -103,7 +103,7 @@ def train(device):
     # -----------------------------
 
     # 加载字母数据（标签为0）
-    letters_dataset = ImageFolder(root="./letters", transform=transform_custom)
+    letters_dataset = ImageFolder(root="./letters2", transform=transform_custom)
     letters_labels = [0] * len(letters_dataset)  # 标记为0（字母）
 
     # 加载数字数据（标签为1）
@@ -117,7 +117,8 @@ def train(device):
 
     # 合并数据集
     train_dataset_stage1 = ConcatDataset([letters_dataset, custom_mnist_dataset_train])
-    train_loader_stage1 = DataLoader(dataset=train_dataset_stage1, batch_size=32, shuffle=True, collate_fn=custom_collate)
+    train_loader_stage1 = DataLoader(dataset=train_dataset_stage1, batch_size=32, shuffle=True, collate_fn=custom_collate_stage1)
+    #pdb.set_trace()
 
     # 定义第一阶段模型和损失函数
     letter_detector = Model(num_classes=2).to(device)
@@ -153,7 +154,8 @@ def train(device):
     custom_mnist_dataset_train_all = CustomMNIST(mnist_data_train_all, mnist_targets_train_all, transform=transform)
 
     # 创建数据加载器
-    data_loader_stage2 = DataLoader(dataset=custom_mnist_dataset_train_all, batch_size=32, shuffle=True, collate_fn=custom_collate)
+    #data_loader_stage2 = DataLoader(dataset=custom_mnist_dataset_train_all, batch_size=32, shuffle=True, collate_fn=custom_collate_stage2)
+    data_loader_stage2 = DataLoader(dataset=custom_mnist_dataset_train_all, batch_size=32, shuffle=True)
 
     # 定义第二阶段模型和损失函数
     digit_classifier = Model(num_classes=3).to(device)
@@ -165,7 +167,7 @@ def train(device):
     for epoch in range(5):  # 可根据需要调整训练轮数
         digit_classifier.train()
         running_loss = 0.0
-        for data in tqdm.tqdm(data_loader_stage2, desc=f'Epoch {epoch+1}/5'):
+        for data in tqdm.tqdm(data_loader_stage2, desc=f'Epoch {epoch+1}/20'):
             inputs, labels = data[0].to(device), data[1].to(device)
             optimizer_stage2.zero_grad()
             outputs = digit_classifier(inputs)
@@ -182,9 +184,9 @@ def train(device):
     # 测试数据准备
     print("Preparing Test Data")
     # 加载测试字母数据集（标签为0）
-    letters_dataset_test = ImageFolder(root="./letters_test", transform=transform_custom)
+    letters_dataset_test = ImageFolder(root="./letters", transform=transform_custom)
     # 如果没有单独的测试集，可以拆分部分训练集作为测试
-    letters_labels_test = [0] * len(letters_dataset_test)  # 标记为0（字母）
+    #letters_labels_test = [0] * len(letters_dataset_test)  # 标记为0（字母）
 
     # 加载测试数字数据集（标签为1）
     mnist_test = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
@@ -195,7 +197,7 @@ def train(device):
 
     # 合并测试数据集
     test_dataset_stage1 = ConcatDataset([letters_dataset_test, custom_mnist_dataset_test])
-    test_loader_stage1 = DataLoader(dataset=test_dataset_stage1, batch_size=32, shuffle=False, collate_fn=custom_collate)
+    test_loader_stage1 = DataLoader(dataset=test_dataset_stage1, batch_size=32, shuffle=False, collate_fn=custom_collate_stage1)
 
     # 测试第一阶段模型
     print("Testing Letter Detector (Stage 1)")
@@ -204,7 +206,15 @@ def train(device):
     # 测试第二阶段模型
     print("Testing Digit Classifier (Stage 2)")
     # 第二阶段测试数据
-    data_loader_stage2_test = DataLoader(dataset=custom_mnist_dataset_test, batch_size=32, shuffle=False, collate_fn=custom_collate)
+    mnist_train_all = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
+    idx_train_all = (mnist_train_all.targets == 1) | (mnist_train_all.targets == 2) | (mnist_train_all.targets == 3)
+    mnist_data_train_all = mnist_train_all.data[idx_train_all]
+    mnist_targets_train_all = mnist_train_all.targets[idx_train_all] - 1  # 标签调整为0,1,2
+    #pdb.set_trace()
+    custom_mnist_dataset_train_all = CustomMNIST(mnist_data_train_all, mnist_targets_train_all, transform=transform)
+
+    data_loader_stage2_test = DataLoader(dataset=custom_mnist_dataset_train_all, batch_size=32, shuffle=False)
+    #data_loader_stage2_test = DataLoader(dataset=custom_mnist_dataset_test, batch_size=32, shuffle=False, collate_fn=custom_collate)
     test(digit_classifier, data_loader_stage2_test, device, phase='Stage 2 Test')
 
     # 保存模型
