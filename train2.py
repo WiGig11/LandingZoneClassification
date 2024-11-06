@@ -125,7 +125,7 @@ def train(device):
     idx_train = (mnist_train.targets == target_digits[0]) | (mnist_train.targets == target_digits[1]) | \
             (mnist_train.targets == target_digits[2]) 
     mnist_data_train = mnist_train.data[idx_train]
-    mnist_targets_train = mnist_train.targets[idx_train]
+    mnist_targets_train = mnist_train.targets[idx_train]+4
     custom_mnist_dataset_train = CustomMNIST(mnist_data_train, mnist_targets_train, transform=transform)
 
     mnist_test = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
@@ -133,7 +133,7 @@ def train(device):
     idx = (mnist_test.targets == target_digits[0]) | (mnist_test.targets == target_digits[1]) | \
             (mnist_test.targets == target_digits[2]) 
     mnist_data_test = mnist_test.data[idx]
-    mnist_targets_test = mnist_test.targets[idx]
+    mnist_targets_test = mnist_test.targets[idx]+4
     custom_mnist_dataset_test = CustomMNIST(mnist_data_test, mnist_targets_test, transform=transform)
 
     transform_custom = transforms.Compose([
@@ -145,23 +145,23 @@ def train(device):
         # 你可能还需要其他转换，例如 Resize, Normalize 等
     ])
     #transforms.Lambda(lambda x: x.point(lambda p: 255 if p > 0 else 0)),
-    emnist_train = ImageFolder(root="./data_x", transform=transform_custom)
-    emnist_test = ImageFolder(root="./testdata", transform=transform_custom)
+    emnist_train = ImageFolder(root="./letters2", transform=transform_custom)
+    emnist_test = ImageFolder(root="./123X", transform=transform_custom)
 
     train_dataset = torch.utils.data.ConcatDataset([custom_mnist_dataset_train, emnist_train])
-    train_loader = torch.utils.data.DataLoader(dataset = train_dataset, batch_size=12, shuffle=True,collate_fn=custom_collate)
+    train_loader = torch.utils.data.DataLoader(dataset = train_dataset, batch_size=32, shuffle=True,collate_fn=custom_collate)
 
     test_dataset = torch.utils.data.ConcatDataset([custom_mnist_dataset_test, emnist_test])
-    test_loader = torch.utils.data.DataLoader(dataset = test_dataset, batch_size=12, shuffle=False,collate_fn=custom_collate)
+    test_loader = torch.utils.data.DataLoader(dataset = test_dataset, batch_size=32, shuffle=False,collate_fn=custom_collate)
 
-    emnist_test_match = ImageFolder(root="./123X/123X", transform=transform_custom)
-    test_loader_match = torch.utils.data.DataLoader(dataset = emnist_test_match, batch_size=16, shuffle=True,collate_fn=custom_collate)
+    emnist_test_match = ImageFolder(root="./123X", transform=transform_custom)
+    test_loader_match = torch.utils.data.DataLoader(dataset = emnist_test_match, batch_size=32, shuffle=True,collate_fn=custom_collate)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
     print("Training!")
-    for epoch in range(int(10)):  # loop over the dataset multiple times
+    for epoch in range(int(50)):  # loop over the dataset multiple times
         running_loss = 0.0
-        for i, data in tqdm.tqdm(enumerate(train_loader),desc=f'Epoch = {epoch+1}/{10}'):
+        for i, data in tqdm.tqdm(enumerate(train_loader),desc=f'Epoch = {epoch+1}/{50}'):
             #inputs, labels = data# get the inputs; data is a list of [inputs, labels]
             inputs, labels = data[0].to(device), data[1].to(device)
             #pdb.set_trace()
@@ -172,8 +172,8 @@ def train(device):
             optimizer.step()
             running_loss += loss.item()            # print statistics
             #writer.add_scalar('Loss/train', loss, epoch)
-        #if epoch%2==0:
-        #    val(model,valloader,device,writer,epoch)
+        if epoch%5==0:
+            test(model,test_loader_match,device)
 
     print('Finished Training')
     test(model,test_loader_match,device)
