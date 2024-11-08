@@ -31,7 +31,7 @@ def custom_collate_stage1(batch):
     new_batch = []
     for items in batch:
         image, label = items
-        label_tensor = torch.tensor(int(0), dtype=torch.long)
+        label_tensor = torch.tensor(int(label), dtype=torch.long)
         new_batch.append((image, label_tensor))
     return default_collate(new_batch)
 
@@ -104,7 +104,7 @@ def train(device):
 
     # 加载字母数据（标签为0）
     letters_dataset = ImageFolder(root="./letters2", transform=transform_custom)
-    letters_labels = [0] * len(letters_dataset)  # 标记为0（字母）
+    #letters_labels = [0] * len(letters_dataset)  # 标记为0（字母）
 
     # 加载数字数据（标签为1）
     mnist_train = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
@@ -112,7 +112,7 @@ def train(device):
     idx_train = (mnist_train.targets == target_digits[0]) | (mnist_train.targets == target_digits[1]) | \
                 (mnist_train.targets == target_digits[2])
     mnist_data_train = mnist_train.data[idx_train]
-    mnist_targets_train = torch.ones(len(mnist_data_train), dtype=torch.long)  # 标记为1（数字）
+    mnist_targets_train = 26 * torch.ones(len(mnist_data_train), dtype=torch.long)  # 标记为26（数字dustin 维度）
     custom_mnist_dataset_train = CustomMNIST(mnist_data_train, mnist_targets_train, transform=transform)
 
     # 合并数据集
@@ -121,7 +121,7 @@ def train(device):
     #pdb.set_trace()
 
     # 定义第一阶段模型和损失函数
-    letter_detector = Model(num_classes=2).to(device)
+    letter_detector = Model(num_classes=27).to(device)
     criterion_stage1 = nn.CrossEntropyLoss()
     optimizer_stage1 = optim.Adam(letter_detector.parameters(), lr=0.001)
 
@@ -150,7 +150,7 @@ def train(device):
     mnist_train_all = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
     idx_train_all = (mnist_train_all.targets == 1) | (mnist_train_all.targets == 2) | (mnist_train_all.targets == 3)
     mnist_data_train_all = mnist_train_all.data[idx_train_all]
-    mnist_targets_train_all = mnist_train_all.targets[idx_train_all] - 1  # 标签调整为0,1,2
+    mnist_targets_train_all = mnist_train_all.targets[idx_train_all] -1  # 标签调整为0,1,2
     custom_mnist_dataset_train_all = CustomMNIST(mnist_data_train_all, mnist_targets_train_all, transform=transform)
 
     # 创建数据加载器
@@ -192,7 +192,7 @@ def train(device):
     mnist_test = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
     idx_test = (mnist_test.targets == 1) | (mnist_test.targets == 2) | (mnist_test.targets == 3)
     mnist_data_test = mnist_test.data[idx_test]
-    mnist_targets_test = torch.ones(len(mnist_data_test), dtype=torch.long)  # 标签为1（数字）
+    mnist_targets_test = 26 * torch.ones(len(mnist_data_test), dtype=torch.long)  # 标签为1（数字）
     custom_mnist_dataset_test = CustomMNIST(mnist_data_test, mnist_targets_test, transform=transform)
 
     # 合并测试数据集
