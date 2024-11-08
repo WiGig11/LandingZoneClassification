@@ -1,7 +1,8 @@
 # Instruction
 
 ## usage
-scp download data, basically two parts: mnist and x
+Incoming...
+<!--scp download data, basically two parts: mnist and x
 ```
 cd LandingZoneClassification
 mkdir models
@@ -21,3 +22,5 @@ train.sh : train model
 train2.py : train model
 
 transfer.py : turn into onnx model
+ -->
+
